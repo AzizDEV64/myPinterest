@@ -17,11 +17,11 @@ document.getElementById('addImageModal').addEventListener('click', function (e) 
 });
 
 // ── Update modal ──────────────────────────────────────────────────────────────
-function openUpdate(title, desc, date) {
+function openUpdate(id, title, desc) {
+    document.getElementById('uImageId').value = id;
     document.getElementById('uTitle').value = title;
     document.getElementById('uDesc').value = desc;
-    document.getElementById('uDate').value = date;
-    document.getElementById('uUrl').value = '';
+    document.getElementById('uFile').value = '';
     document.getElementById('updateModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }

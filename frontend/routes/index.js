@@ -5,7 +5,7 @@ const axios = require("axios")
 
 router.get("/",async (req,res) => {
   const response = await axios.get(process.env.BACKEND_URL+"/image")
-  res.render("index")
+  res.render("index",{images:response.data.data.images})
 })
 
 let routes = fs.readdirSync(__dirname)
