@@ -1,3 +1,21 @@
+// ── Add Image modal ──────────────────────────────────────────────────────────
+function openAddImage() {
+    document.getElementById('aTitle').value = '';
+    document.getElementById('aDesc').value = '';
+    document.getElementById('aFile').value = '';
+    document.getElementById('addImageModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAddImage() {
+    document.getElementById('addImageModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('addImageModal').addEventListener('click', function (e) {
+    if (e.target === this) closeAddImage();
+});
+
 // ── Update modal ──────────────────────────────────────────────────────────────
 function openUpdate(title, desc, date) {
     document.getElementById('uTitle').value = title;
@@ -48,5 +66,5 @@ document.getElementById('lightboxClose').addEventListener('click', closeLightbox
 
 // ESC her ikisini de kapatır
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeUpdate(); closeLightbox(); }
+    if (e.key === 'Escape') { closeAddImage(); closeUpdate(); closeLightbox(); }
 });
