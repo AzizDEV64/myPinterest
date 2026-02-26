@@ -14,7 +14,6 @@ const imageSchema = mongoose.Schema( {
     },
     imageURL: {
         type: String,
-        required: true,
         trim: true,
         match: /^https?:\/\/.+/
     }
