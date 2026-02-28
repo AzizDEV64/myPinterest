@@ -16,12 +16,14 @@ const imageSchema = mongoose.Schema( {
         type: String,
         trim: true,
         match: /^https?:\/\/.+/
+    },
+    publicId: {
+        type: String,
+        trim: true
     }
 },{
     versionKey:false,
-    timestamps:{
-    createdAt:"created_at",
-    updatedAt:"updated_at"
-}})
+    timestamps:true
+})
 
 module.exports = mongoose.model("image", imageSchema)
