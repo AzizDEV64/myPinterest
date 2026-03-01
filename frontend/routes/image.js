@@ -10,7 +10,16 @@ router.post("/add", upload.single("image"), async (req, res) => {
     const form = new FormData()
     form.append("title", req.body.title)
     form.append("description", req.body.description)
-    form.append("image", req.file.buffer, req.file.originalname)
+
+    if (req.file) {
+      form.append("image", req.file.buffer, req.file.originalname)
+    } else if (req.body.imageURL) {
+      const imgResponse = await axios.get(req.body.imageURL, { responseType: 'arraybuffer' })
+      const contentType = imgResponse.headers['content-type'] || 'image/jpeg'
+      const ext = contentType.split('/')[1] || 'jpg'
+      const filename = 'internet-image.' + ext.split(';')[0]
+      form.append("image", Buffer.from(imgResponse.data), { filename, contentType })
+    }
 
     const image = await axios.post(process.env.BACKEND_URL + "/image/add", form, {
       headers: form.getHeaders(),
@@ -29,12 +38,18 @@ router.post("/update", upload.single("image"), async (req, res) => {
     const form = new FormData()
     form.append("title", req.body.title)
     form.append("description", req.body.description)
-    if(req.file){
 
+    if (req.file) {
       form.append("image", req.file.buffer, req.file.originalname)
+    } else if (req.body.imageURL) {
+      const imgResponse = await axios.get(req.body.imageURL, { responseType: 'arraybuffer' })
+      const contentType = imgResponse.headers['content-type'] || 'image/jpeg'
+      const ext = contentType.split('/')[1] || 'jpg'
+      const filename = 'internet-image.' + ext.split(';')[0]
+      form.append("image", Buffer.from(imgResponse.data), { filename, contentType })
     }
 
-    const image = await axios.put(process.env.BACKEND_URL + "/image/update/" + req.body.imageId , form, {
+    const image = await axios.put(process.env.BACKEND_URL + "/image/update/" + req.body.imageId, form, {
       headers: form.getHeaders(),
       maxBodyLength: Infinity,
       maxContentLength: Infinity
@@ -48,9 +63,9 @@ router.post("/update", upload.single("image"), async (req, res) => {
 })
 router.post("/delete", async (req, res) => {
   try {
-    
 
-    await axios.delete(process.env.BACKEND_URL + "/image/delete/" + req.body.imageId , {
+
+    await axios.delete(process.env.BACKEND_URL + "/image/delete/" + req.body.imageId, {
       maxBodyLength: Infinity,
       maxContentLength: Infinity
     })

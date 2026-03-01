@@ -12,9 +12,22 @@ cloudinary.config({
   api_secret: process.env.API_SECRET
 })
 
-router.get("/",async (req,res) => {
+router.get("/feed",async (req,res) => {
     try {
-        let images = await Image.find({})
+        const limit = 10;
+        let images = await Image.find({}).limit(limit)
+        res.json(Response.successResponse({images}))
+    } catch (error) {
+        res.status(Response.errorResponse(error).code).json(Response.errorResponse(error))
+    }
+})
+router.post("/images",async (req,res) => {
+    try {
+        const limit = 10;
+        const page = req.body.page
+        const skip = page * limit
+        let images = await Image.find({}).skip(skip).limit(limit)
+        console.log(images)
         res.json(Response.successResponse({images}))
     } catch (error) {
         res.status(Response.errorResponse(error).code).json(Response.errorResponse(error))

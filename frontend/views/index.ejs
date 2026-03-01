@@ -60,16 +60,16 @@
                                 </svg>
                             </button>
                             <form action="/image/delete" method="POST">
-                                <input type="hidden" name="imageId" value="<%= image._id  %>"  />
-                                <button type="submit" class="btn-icon btn-delete"  title="Sil">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2.2">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                    <path d="M10 11v6M14 11v6" />
-                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                                </svg>
-                            </button>
+                                <input type="hidden" name="imageId" value="<%= image._id  %>" />
+                                <button type="submit" class="btn-icon btn-delete" title="Sil">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                        <path d="M10 11v6M14 11v6" />
+                                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                    </svg>
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -120,7 +120,25 @@
                     </div>
                     <div class="form-group">
                         <label>Resim</label>
-                        <input type="file" name="image" id="aFile" accept="image/*" required />
+                        <div class="drop-zone" id="aDropZone">
+                            <input type="file" name="image" id="aFile" accept="image/*" class="drop-zone__input" />
+                            <input type="hidden" name="imageURL" id="aImageURL" />
+                            <div class="drop-zone__prompt" id="aDropPrompt">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <span>Dosya veya internet resmi sürükleyin</span>
+                                <small>ya da tıklayarak dosya seçin</small>
+                            </div>
+                            <div class="drop-zone__preview" id="aDropPreview" style="display:none">
+                                <img id="aPreviewImg" src="" alt="Önizleme" />
+                                <button type="button" class="drop-zone__remove" onclick="clearDropZone('add')"
+                                    title="Kaldır">&times;</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -155,7 +173,25 @@
                     </div>
                     <div class="form-group">
                         <label>Resim</label>
-                        <input type="file" name="image" id="uFile" accept="image/*" />
+                        <div class="drop-zone" id="uDropZone">
+                            <input type="file" name="image" id="uFile" accept="image/*" class="drop-zone__input" />
+                            <input type="hidden" name="imageURL" id="uImageURL" />
+                            <div class="drop-zone__prompt" id="uDropPrompt">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <span>Dosya veya internet resmi sürükleyin</span>
+                                <small>ya da tıklayarak dosya seçin</small>
+                            </div>
+                            <div class="drop-zone__preview" id="uDropPreview" style="display:none">
+                                <img id="uPreviewImg" src="" alt="Önizleme" />
+                                <button type="button" class="drop-zone__remove" onclick="clearDropZone('update')"
+                                    title="Kaldır">&times;</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -178,7 +214,108 @@
             <p class="lightbox-caption" id="lightboxCaption"></p>
         </div>
     </div>
+    <!-- LOADING SPINNER -->
+    <div id="load-more-trigger" class="scroll-loader">
+        <div class="spinner" id="loadSpinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+        </div>
+        <span class="scroll-loader__text" id="loadText">Yükleniyor...</span>
+    </div>
 
+    <script>
+        // XSS koruması
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ── Infinite Scroll ──
+        let currentPage = 1;
+        let isLoading = false;
+        const gallery = document.querySelector('.gallery');
+        const trigger = document.getElementById('load-more-trigger');
+        const loadSpinner = document.getElementById('loadSpinner');
+        const loadText = document.getElementById('loadText');
+
+        const observer = new IntersectionObserver(async (entries) => {
+            if (entries[0].isIntersecting && !isLoading) {
+                isLoading = true;
+                trigger.classList.add('active');
+
+                try {
+                    const delay = new Promise(r => setTimeout(r, 1000));
+                    const dataPromise = fetch(`/images?page=${currentPage}`).then(r => r.json());
+                    const [newPosts] = await Promise.all([dataPromise, delay]);
+
+                    if (newPosts.images.length > 0) {
+                        newPosts.images.forEach(image => {
+                            const t = escapeHTML(image.title);
+                            const d = escapeHTML(image.description);
+                            const id = escapeHTML(image._id);
+                            const u = escapeHTML(image.imageURL);
+
+                            const html = `<div class="card">
+                                <div class="card-img-wrap">
+                                    <img src="${u}" alt="${t}" />
+                                    <div class="card-actions">
+                                        <button class="btn-icon btn-edit" title="Güncelle" onclick="openUpdate('${id}','${t}','${d}')">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                            </svg>
+                                        </button>
+                                        <form action="/image/delete" method="POST">
+                                            <input type="hidden" name="imageId" value="${id}"/>
+                                            <button type="submit" class="btn-icon btn-delete" title="Sil">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                                    <polyline points="3 6 5 6 21 6"/>
+                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                                    <path d="M10 11v6M14 11v6"/>
+                                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="card-title">${t}</div>
+                                    <div class="card-desc">${d}</div>
+                                    <span class="card-date">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                        10 Kasım 2025
+                                    </span>
+                                </div>
+                            </div>`;
+                            gallery.insertAdjacentHTML('beforeend', html);
+                        });
+
+                        if (typeof bindLightbox === 'function') bindLightbox();
+                        currentPage++;
+                    } else {
+                        loadSpinner.style.display = 'none';
+                        loadText.textContent = 'Hepsi bu kadar!';
+                        trigger.classList.add('done');
+                        observer.unobserve(trigger);
+                    }
+                } catch (err) {
+                    console.error('Yükleme hatası:', err);
+                    loadText.textContent = 'Yükleme hatası!';
+                }
+
+                trigger.classList.remove('active');
+                isLoading = false;
+            }
+        });
+
+        observer.observe(trigger);
+    </script>
     <script src="/javascripts/app.js"></script>
 </body>
 
